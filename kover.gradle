@@ -1,0 +1,41 @@
+apply plugin: 'org.jetbrains.kotlinx.kover'
+
+def exclude = [
+        // Presentation
+        "com.datdang.snakeblock.ui.widget.*",
+        "com.datdang.snakeblock.ui.base.*",
+        "com.datdang.snakeblock.ui.feed.usecase.*",
+
+        // Data
+        "com.datdang.data.exception.*",
+        "com.datdang.data.mapper.*",
+        "com.datdang.data.entities.*",
+        "com.datdang.data.db.*",
+        "com.datdang.data.util.*",
+
+        // DI
+        "*Hilt_*", "*_Hilt*",
+        "*_Factory*", "*_*Factory", "*_GeneratedInjector", "*_HiltComponents*",
+        "dagger.hilt.internal.*",
+        "*_di_*",
+]
+
+def include = [
+        "com.datdang.snakeblock.ui.*ViewModel",
+        "com.datdang.data.*",
+        //"*usecase*"
+]
+
+kover {
+    reports {
+        // filters for all report types of all build variants
+        filters.excludes.androidGeneratedClasses()
+        filters.excludes.classes(exclude)
+        filters.includes.classes(include)
+    }
+}
+
+tasks.register("koverTask") {
+    dependsOn 'koverHtmlReportProdDebug'
+    description = "Runs kover and generates coverage reports"
+}
