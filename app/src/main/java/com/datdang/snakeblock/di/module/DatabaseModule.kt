@@ -1,11 +1,10 @@
 package com.datdang.snakeblock.di.module
 
 import android.content.Context
-import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.datdang.snakeblock.data.db.game.GameDatabase
-import com.datdang.snakeblock.data.util.DiskExecutor
+import com.datdang.snakeblock.data.dao.LevelDao
+import com.datdang.snakeblock.data.repository.LevelRepositoryImpl
+import com.datdang.snakeblock.domain.repository.LevelRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,25 +14,22 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-class DatabaseModule {
+object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideGameDatabase(
-        @ApplicationContext context: Context,
-        diskExecutor: DiskExecutor
-    ): GameDatabase {
-        return Room
-            .databaseBuilder(context, GameDatabase::class.java, "game.db")
-            .setQueryExecutor(diskExecutor)
-            .setTransactionExecutor(diskExecutor)
-//            .addMigrations(MIGRATION_1_2)
-            .build()
+    fun provideGameDatabase(@ApplicationContext context: Context): GameDatabase {
+        return GameDatabase.getDatabase(context)
+    }
+
+    @Provides
+    fun provideLevelDao(database: GameDatabase): LevelDao {
+        return database.levelDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideLevelRepository(levelDao: LevelDao): LevelRepository {
+        return LevelRepositoryImpl(levelDao)
     }
 }
-//
-//private val MIGRATION_1_2 = object : Migration(1, 2) {
-//    override fun migrate(db: SupportSQLiteDatabase) {
-//        db.execSQL("ALTER TABLE best_time ADD COLUMN score INTEGER")
-//    }
-//}

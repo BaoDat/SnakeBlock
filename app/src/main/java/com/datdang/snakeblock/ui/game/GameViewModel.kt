@@ -18,7 +18,9 @@ class GameViewModel @Inject constructor(
     private val setupLevelUseCase: SetupLevelUseCase,
     private val moveSnakeUseCase: MoveSnakeUseCase,
     private val undoMoveUseCase: UndoMoveUseCase,
-    private val getGameStateUseCase: GetGameStateUseCase
+    private val getGameStateUseCase: GetGameStateUseCase,
+    private val getLevelUseCase: GetLevelUseCase,
+    private val completeLevelUseCase: CompleteLevelUseCase
 ) : ViewModel() {
 
     private val _gameState = MutableStateFlow(
@@ -40,17 +42,31 @@ class GameViewModel @Inject constructor(
     private val _isGameWon = MutableStateFlow(false)
     val isGameWon: StateFlow<Boolean> = _isGameWon.asStateFlow()
 
+    private val _currentLevel = MutableStateFlow(1)
+    val currentLevel: StateFlow<Int> = _currentLevel.asStateFlow()
+
+    private val _moveCount = MutableStateFlow(0)
+    val moveCount: StateFlow<Int> = _moveCount.asStateFlow()
+
     fun startLevel(levelNumber: Int) {
         viewModelScope.launch {
-            val levelData = when (levelNumber) {
-                1 -> setupLevelUseCase.getLevel1Data()
-                2 -> setupLevelUseCase.getLevel2Data()
-                3 -> setupLevelUseCase.getLevel3Data()
-                else -> setupLevelUseCase.getLevel1Data() // Default to level 1
+            try {
+                _currentLevel.value = levelNumber
+                _moveCount.value = 0
+                _isGameWon.value = false
+                setupLevelUseCase(levelNumber)
+                updateGameState()
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load level $levelNumber: ${e.message}"
             }
-            
-            setupLevelUseCase(levelData)
-            updateGameState()
+        }
+    }
+
+        private suspend fun completeCurrentLevel() {
+        try {
+            completeLevelUseCase(_currentLevel.value, _moveCount.value)
+        } catch (e: Exception) {
+            // Log error but don't show to user as level is already completed
         }
     }
 
@@ -58,12 +74,14 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = moveSnakeUseCase(targetCoordinate)) {
                 is MoveResult.Success -> {
+                    _moveCount.value += 1
                     updateGameState()
                     _errorMessage.value = null
                     
                     // Check win condition
                     if (gameEngine.checkWin()) {
                         _isGameWon.value = true
+                        completeCurrentLevel()
                     }
                 }
                 is MoveResult.Error -> {
@@ -76,9 +94,12 @@ class GameViewModel @Inject constructor(
     fun undoMove() {
         viewModelScope.launch {
             if (undoMoveUseCase()) {
+                if (_moveCount.value > 0) {
+                    _moveCount.value -= 1
+                }
+                _isGameWon.value = false
                 updateGameState()
                 _errorMessage.value = null
-                _isGameWon.value = false // Reset win state when undoing
             }
         }
     }
@@ -88,8 +109,15 @@ class GameViewModel @Inject constructor(
     }
 
     fun resetGame() {
+        _moveCount.value = 0
         _isGameWon.value = false
-        startLevel(1) // Reset to level 1
+//        gameEngine.resetGame()
+        updateGameState()
+    }
+
+    fun nextLevel() {
+        val nextLevelNumber = _currentLevel.value + 1
+        startLevel(nextLevelNumber)
     }
 
     private fun updateGameState() {

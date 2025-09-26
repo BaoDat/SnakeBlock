@@ -2,6 +2,7 @@ package com.datdang.snakeblock.di.module
 
 import com.datdang.snakeblock.domain.game.SnakeBlockGameEngine
 import com.datdang.snakeblock.domain.usecase.*
+import com.datdang.snakeblock.domain.repository.LevelRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,8 +21,11 @@ object GameModule {
 
     @Provides
     @ViewModelScoped
-    fun provideSetupLevelUseCase(gameEngine: SnakeBlockGameEngine): SetupLevelUseCase {
-        return SetupLevelUseCase(gameEngine)
+    fun provideSetupLevelUseCase(
+        gameEngine: SnakeBlockGameEngine,
+        levelRepository: LevelRepository
+    ): SetupLevelUseCase {
+        return SetupLevelUseCase(gameEngine, levelRepository)
     }
 
     @Provides
@@ -40,5 +44,23 @@ object GameModule {
     @ViewModelScoped
     fun provideGetGameStateUseCase(gameEngine: SnakeBlockGameEngine): GetGameStateUseCase {
         return GetGameStateUseCase(gameEngine)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetLevelUseCase(levelRepository: LevelRepository): GetLevelUseCase {
+        return GetLevelUseCase(levelRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetAllLevelsUseCase(levelRepository: LevelRepository): GetAllLevelsUseCase {
+        return GetAllLevelsUseCase(levelRepository)
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideCompleteLevelUseCase(levelRepository: LevelRepository): CompleteLevelUseCase {
+        return CompleteLevelUseCase(levelRepository)
     }
 }

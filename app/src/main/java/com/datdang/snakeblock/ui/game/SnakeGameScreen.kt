@@ -31,6 +31,8 @@ fun SnakeGameScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val canUndo by viewModel.canUndo.collectAsState()
     val isGameWon by viewModel.isGameWon.collectAsState()
+    val currentLevel by viewModel.currentLevel.collectAsState()
+    val moveCount by viewModel.moveCount.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.startLevel(1)
@@ -41,10 +43,20 @@ fun SnakeGameScreen(
         AlertDialog(
             onDismissRequest = { },
             title = { Text("Congratulations!") },
-            text = { Text("You have completed the level!") },
+            text = { 
+                Column {
+                    Text("You completed Level $currentLevel!")
+                    Text("Moves: $moveCount")
+                }
+            },
             confirmButton = {
+                TextButton(onClick = { viewModel.nextLevel() }) {
+                    Text("Next Level")
+                }
+            },
+            dismissButton = {
                 TextButton(onClick = { viewModel.resetGame() }) {
-                    Text("Play Again")
+                    Text("Restart")
                 }
             }
         )
@@ -69,11 +81,25 @@ fun SnakeGameScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Red Blocks: ${gameState.redBlocksFilled}/${gameState.totalRedBlocks}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Column {
+                Text(
+                    text = "Level $currentLevel",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Moves: $moveCount",
+                    fontSize = 14.sp
+                )
+            }
+            
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "Red Blocks: ${gameState.redBlocksFilled}/${gameState.totalRedBlocks}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Button(
                 onClick = { viewModel.undoMove() },
